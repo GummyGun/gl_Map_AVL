@@ -6,15 +6,15 @@ OBJ = $(TMP)/obj
 DEP = $(TMP)/dep
 CC = gcc
 
-BASE = <<<base Name of the lib>>>
+BASE = ggluemap
 LIB = lib$(BASE)
 EXE = $(BASE).out
 
 DPR = d_
 PIC = pic_
 
-files := <<<lib implementation source files>>>
-test := <<<test file name>>>
+files := glMap.c
+test := main.c
 ft = $(files) $(test)
 
 prod_sta_OBJS = $(addprefix $(OBJ)/, $(files:.c=.o))
@@ -33,7 +33,7 @@ linkerFlags =
 
 .PHONY: target statDbug dinDbug statProd dinProd 
 
-target: <<<default on make>>>
+target: dbug
 
 testDebug: dbug
 

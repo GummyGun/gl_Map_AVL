@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "glMap.h"
 
 int
 main(){
