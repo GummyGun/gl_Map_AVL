@@ -6,15 +6,15 @@ OBJ = $(TMP)/obj
 DEP = $(TMP)/dep
 CC = gcc
 
-BASE = <<<base Name of the lib>>>
+BASE = ggluemap
 LIB = lib$(BASE)
 EXE = $(BASE).out
 
 DPR = d_
 PIC = pic_
 
-files := <<<lib implementation source files>>>
-test := <<<test file name>>>
+files := glMap.c
+test := main.c
 ft = $(files) $(test)
 
 prod_sta_OBJS = $(addprefix $(OBJ)/, $(files:.c=.o))
@@ -33,7 +33,7 @@ linkerFlags =
 
 .PHONY: target statDbug dinDbug statProd dinProd 
 
-target: <<<default on make>>>
+target: dbug
 
 testDebug: dbug
 
@@ -62,19 +62,19 @@ dbug_pic prod_pic: $$($$@_DEPS) $$($$@_OBJS)
 
 $(OBJ)/%.o: $(SRC)/%.c
 	$(CC) $(prodCompilerFlags) \
-	-o $@ $^ -c 
+	-o $@ $< -c 
 
 $(OBJ)/$(PIC)%.o: $(SRC)/%.c
 	$(CC) $(prodCompilerFlags) \
-	-o $@ $^ -c -fPIC 
+	-o $@ $< -c -fPIC 
 
 $(OBJ)/$(DPR)%.o: $(SRC)/%.c
 	$(CC) $(dbugCompilerFlags) \
-	-o $@ $^ -c
+	-o $@ $< -c
 
 $(OBJ)/$(DPR)$(PIC)%.o: $(SRC)/%.c
 	$(CC) $(dbugCompilerFlags) \
-	-o $@ $^ -c -fPIC
+	-o $@ $< -c -fPIC
 
 $(DEP)/%.d $(DEP)/$(DPR)%.d $(DEP)/$(PIC)%.d $(DEP)/$(DPR)$(PIC)%.d : $(SRC)/%.c
 	$(CC) $< -M \
