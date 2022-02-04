@@ -28,7 +28,7 @@ prod_pic_DEPS = $(addprefix $(DEP)/$(PIC), $(ft:.c=.d))
 dbug_pic_DEPS = $(addprefix $(DEP)/$(DPR)$(PIC), $(ft:.c=.d))
 
 prodCompilerFlags = -O3 -m64 -Wall -Wpedantic -Wextra
-dbugCompilerFlags = -O0 -g -m64 -Wall -Wpedantic -Wextra
+dbugCompilerFlags = -Og -g -m64 -Wall -Wpedantic -Wextra
 linkerFlags = 
 
 .PHONY: target statDbug dinDbug statProd dinProd 
