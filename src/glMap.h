@@ -25,6 +25,9 @@ struct glMap_MAP{
 
 _Bool glMap_print();
 
+void test_rotateR(struct glMap_MAP *pivot);
+void test_rotateL(struct glMap_MAP *pivot);
+
 //insert
 
 _Bool glMap_createMap(struct glMap_MAP **container, ptrdiff_t offset, ptrdiff_t key, int8_t(*cmp)(void*,void*));

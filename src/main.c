@@ -10,10 +10,9 @@ struct testStruct{
 };
 
 _Bool 
-createNode(struct testStruct **test){
-    static int ret=0;
+createNode(struct testStruct **test, int64_t key){
     *test=(struct testStruct*)malloc(sizeof(struct testStruct));
-    (*test)->key=ret++;
+    (*test)->key=key;
     return 0;
 }
 
@@ -37,15 +36,24 @@ main(){
     
     struct testStruct *pointer=NULL;
     
+    int64_t array[]={1,3,2};
+    
+    for(int32_t iter=0; iter<3; iter++){
+        createNode(&pointer, 1000-array[iter]);
+        if(glMap_insertNode(map, pointer)){
+            printf("eroror\n");
+        }
+    }
+    
+    
+    /*
     createNode(&pointer);
-    
-    glMap_insertNode(map, pointer);
-    
-    createNode(&pointer);
-    
     if(glMap_insertNode(map, pointer)){
         printf("eroror\n");
     }
+    */
+    
+    //test_rotateR(map);
     
     return 1;
 }
