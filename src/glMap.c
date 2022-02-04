@@ -1,10 +1,10 @@
 #include "glMap.h"
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
+#include <stdio.h>
 /* 
  * defined in header file
 typedef struct glMap_NODE{
@@ -30,10 +30,15 @@ enum glMap_enum_side{
     glME_right
 };
 
+enum glMap_enum_iterState{
+    glME_down=0,
+    glME_turn
+};
+
 //general
 //insert
 //delete
-//search
+//get
 //iterate
 
 
@@ -57,20 +62,38 @@ static void s_rotateRigth(struct glMap_NODE *pivot);
 //delete
 
 
-//search
+//get
 
+//int64_t glMap_getSize(struct glMap_MAP *map);
 
 //iterate
 
+//void glMap_createIter(struct glMap_MAP *map, struct glMap_ITER *iter);
+//_Bool glMap_iterNextVal(struct glMap_ITER *iter, void **pointer);
 
+
+//debug
+void test_printNode(struct glMap_NODE *node, int over);
+
+void
+test_print(struct glMap_MAP *map){
+    test_printNode(map->head.left, 5);
+}
+
+void
+test_printNode(struct glMap_NODE *node, int over){
+    if(node->left){
+        test_printNode(node->left, over-1);
+    }
+    int indent=over;
+    while(indent--)printf("\t");
+    printf("anchor\n");
+    if(node->right){
+        test_printNode(node->right, over-1);
+    }
+}
 
 //general
-
-_Bool
-glMap_print(){
-    printf("hola\n");
-    return 0;
-}
 
 static inline
 int8_t
@@ -129,18 +152,6 @@ A   C            C   E
         nodeB->father->rDepth=1+s_getNodeMaxDepth(nodeB);
     }
     pivot->father=nodeB;
-}
-
-void
-test_rotateR(struct glMap_MAP *pivot){
-    struct glMap_NODE *test=pivot->head.left;
-    s_rotateRigth(test);
-}
-
-void
-test_rotateL(struct glMap_MAP *pivot){
-    struct glMap_NODE *test=pivot->head.left;
-    s_rotateLeft(test);
 }
 
 static 
@@ -220,11 +231,13 @@ glMap_insertNode(struct glMap_MAP *container, void *toInsert){
                 break;
             }
             default:{
+                return 1;
                 assert(0);
             }
         }
     }
     //insertNode
+    container->size++;
     *pivot=anchor;
     (*pivot)->father=pivotFather;
     //balance Upwards
@@ -256,7 +269,6 @@ glMap_insertNode(struct glMap_MAP *container, void *toInsert){
                 s_rotateRigth(upwardPtr->left);
                 s_rotateLeft(upwardPtr);
             }
-            //assert("balancear"&&0);
         }else if((balFac>1)){
             if(upwardPtr->right->rDepth>=upwardPtr->right->lDepth){
                 s_rotateRigth(upwardPtr);
@@ -273,9 +285,78 @@ glMap_insertNode(struct glMap_MAP *container, void *toInsert){
 //delete
 
 
-//search
+//get
 
+int64_t 
+glMap_getSize(struct glMap_MAP *map){
+    return map->size;
+}
 
 //iterate
 
+void
+glMap_createIter(struct glMap_MAP *map, struct glMap_ITER *iter){
+    iter->autoRef=iter;
+    iter->map=map;
+    if(map->size==0){
+        iter->actualNode=&(map->head);
+        return;
+    }
+    iter->actualNode=map->head.left;
+    while(iter->actualNode->left){
+        iter->actualNode=iter->actualNode->left;
+    }
+    iter->state=glME_down;
+}
 
+_Bool 
+glMap_iterNextVal(struct glMap_ITER iterCpy, void **pointer){
+    struct glMap_ITER *iter=iterCpy.autoRef;
+    if(!iter->actualNode->father){
+        *pointer=NULL;
+        return 1;
+    }
+    *pointer=s_getStartFromNode(iter->map, iter->actualNode);
+    switch(iter->state){
+        case glME_down:{
+            if(iter->actualNode->right){ //<--------------1
+                iter->actualNode=iter->actualNode->right;
+                return 0;
+            }
+            break;
+        }
+        case glME_turn:{                                    
+            if(!iter->actualNode->right){ //<-------------2 
+                break;                                      
+            }                                               
+            iter->actualNode=iter->actualNode->right;       
+            while(iter->actualNode->left){                  
+                iter->actualNode=iter->actualNode->left;    
+            }
+            iter->state=glME_down;
+            return 0;
+        }
+    }
+    while(s_getSide(iter->actualNode)==glME_right){
+        iter->actualNode=iter->actualNode->father;
+    }
+    iter->actualNode=iter->actualNode->father;
+    iter->state=glME_turn;
+    return 0;
+}
+/* Apendix
+1.- case there is right son on A going down
+   C
+ _/
+|A|
+  \
+   B
+
+2.- case there is no right node on C going up
+ A                                      
+  \_
+  |C|
+  /
+ B
+
+*/

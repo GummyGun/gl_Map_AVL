@@ -14,6 +14,13 @@ typedef struct glMap_NODE{
     int8_t rDepth;
 }glMap_Anchor;
 
+typedef struct glMap_ITER{
+    struct glMap_MAP *map;
+    struct glMap_NODE *actualNode;
+    struct glMap_ITER *autoRef;
+    int8_t state;
+}glMap_Iter;
+
 /*
 struct glMap_MAP{
     struct glMap_NODE head;
@@ -23,10 +30,7 @@ struct glMap_MAP{
 };
 */
 
-_Bool glMap_print();
-
-void test_rotateR(struct glMap_MAP *pivot);
-void test_rotateL(struct glMap_MAP *pivot);
+void test_print(struct glMap_MAP *map);
 
 //insert
 
@@ -35,7 +39,14 @@ _Bool glMap_createMap(struct glMap_MAP **container, ptrdiff_t offset, ptrdiff_t 
 _Bool glMap_insertNode(struct glMap_MAP *container, void *toInsert);
 
 //delete
-//search
+//get
+
+int64_t glMap_getSize(struct glMap_MAP *map);
+
 //iterate
+
+void glMap_createIter(struct glMap_MAP *map, struct glMap_ITER *iter);
+
+_Bool glMap_iterNextVal(struct glMap_ITER iter, void **pointer);
 
 #endif /*__GUM__GL__AVL__MAP__*/

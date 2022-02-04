@@ -32,18 +32,25 @@ int
 main(){
     glMap_Map map=NULL;
     glMap_createMap(&map, offsetof(struct testStruct, anchor), offsetof(struct testStruct, key), cmp);
-    glMap_print();
     
     struct testStruct *pointer=NULL;
     
-    int64_t array[]={1,3,2};
     
-    for(int32_t iter=0; iter<3; iter++){
-        createNode(&pointer, 1000-array[iter]);
-        if(glMap_insertNode(map, pointer)){
-            printf("eroror\n");
+    int64_t size=0;
+    for(int32_t iter=0; iter<60; iter++){
+        createNode(&pointer, rand()%10);
+        //createNode(&pointer, iter);
+        
+        if(!glMap_insertNode(map, pointer)){
+            size++;
+        }else{
+            free(pointer);
         }
     }
+    printf("size: %ld\n", size);
+    printf("size in map: %ld\n", glMap_getSize(map));
+    /*
+    */
     
     
     /*
@@ -52,8 +59,15 @@ main(){
         printf("eroror\n");
     }
     */
-    
     //test_rotateR(map);
     
+    //test_print(map);
+    
+    glMap_Iter iter;
+    glMap_createIter(map, &iter);
+    struct testStruct *holder=NULL;
+    while(!glMap_iterNextVal(iter, (void**)&holder)){
+        printf("%ld\n", holder->key);
+    }
     return 1;
 }
