@@ -26,7 +26,7 @@ struct glMap_MAP{
 
 enum glMap_enum_side{
     glME_left=-1,
-    glME_rep,
+    glME_else,
     glME_right
 };
 
@@ -46,9 +46,10 @@ enum glMap_enum_iterState{
 
 //_Bool glMap_print();
 static inline int8_t s_getNodeMaxDepth(struct glMap_NODE *pivot);
-static inline void* s_getKeyFromNode(struct glMap_MAP *container, void *node);
-static inline void* s_getStartFromNode(struct glMap_MAP *container, void *node);
+static inline void* s_getKeyFromNode(struct glMap_MAP *container, struct glMap_NODE *node);
+static inline void* s_getStartFromNode(struct glMap_MAP *container, struct glMap_NODE *node);
 static inline enum glMap_enum_side s_getSide(struct glMap_NODE *anchor);
+static inline void s_balanceFromBottom(struct glMap_NODE *pivot);
 
 static void s_rotateLeft(struct glMap_NODE *pivot);
 static void s_rotateRigth(struct glMap_NODE *pivot);
@@ -61,23 +62,24 @@ static void s_rotateRigth(struct glMap_NODE *pivot);
 
 //delete
 
+//_Bool glMap_deleteNode(struct glMap_MAP *container, void *mem);
 
 //get
 
-//int64_t glMap_getSize(struct glMap_MAP *map);
+//int64_t glMap_getSize(struct glMap_MAP *container);
 
 //iterate
 
-//void glMap_createIter(struct glMap_MAP *map, struct glMap_ITER *iter);
-//_Bool glMap_iterNextVal(struct glMap_ITER *iter, void **pointer);
+//void glMap_createIter(struct glMap_MAP *container, struct glMap_ITER *iter);
+//_Bool glMap_iterNextNode(struct glMap_ITER *iter, void **pointer);
 
 
 //debug
 void test_printNode(struct glMap_NODE *node, int over);
 
 void
-test_print(struct glMap_MAP *map){
-    test_printNode(map->head.left, 5);
+test_print(struct glMap_MAP *container){
+    test_printNode(container->head.left, 5);
 }
 
 void
@@ -106,20 +108,69 @@ s_getNodeMaxDepth(struct glMap_NODE *pivot){
 
 static inline
 void*
-s_getKeyFromNode(struct glMap_MAP *container, void *node){
+s_getKeyFromNode(struct glMap_MAP *container, struct glMap_NODE *node){
     return ((int8_t*)node+container->keyOffset);
 }
 
 static inline
 void*
-s_getStartFromNode(struct glMap_MAP *container, void *node){
+s_getStartFromNode(struct glMap_MAP *container, struct glMap_NODE *node){
     return ((int8_t*)node+container->startOffset);
 }
 
 static inline 
 enum glMap_enum_side 
 s_getSide(struct glMap_NODE *anchor){
-    return (anchor->father->left==anchor)?glME_left:glME_right;
+    return (anchor->father->left==anchor)?glME_left:(anchor->father->right==anchor)?glME_right:glME_else;
+}
+
+static inline
+void
+s_balanceFromBottom(struct glMap_NODE *pivot){
+    enum glMap_enum_side side=glME_left;
+    if(pivot->left){
+        pivot=pivot->left;
+    }else if(pivot->right){
+        pivot=pivot->right;
+    }
+    while(pivot->father){
+        side=s_getSide(pivot);
+        switch(side){
+            case glME_left:{
+                pivot->father->lDepth=1+s_getNodeMaxDepth(pivot);
+                break;
+            }
+            case glME_right:{
+                pivot->father->rDepth=1+s_getNodeMaxDepth(pivot);
+                break;
+            }
+            default:{
+                return;
+                assert(0);
+            } 
+        }
+        if(!pivot->father){
+            break;
+        }
+        int8_t balFac=pivot->rDepth-pivot->lDepth;
+        if((balFac<-1)){
+            if(pivot->left->lDepth>=pivot->left->rDepth){
+                s_rotateLeft(pivot);
+            }else{
+                s_rotateRigth(pivot->left);
+                s_rotateLeft(pivot);
+            }
+        }else if((balFac>1)){
+            if(pivot->right->rDepth>=pivot->right->lDepth){
+                s_rotateRigth(pivot);
+            }else{
+                s_rotateLeft(pivot->right);
+                s_rotateRigth(pivot);
+            }
+        }
+        pivot=pivot->father;
+    } 
+    pivot->lDepth=1+s_getNodeMaxDepth(pivot->left);
 }
 
 static 
@@ -131,10 +182,10 @@ s_rotateLeft(struct glMap_NODE *pivot){
   B   E  ===>  A  |D|  
  / \              / \
 A   C            C   E
-*/
     if(!pivot->left){
         assert("no left pivot" && 0);
     }
+*/
     struct glMap_NODE *nodeB=pivot->left;
     if(nodeB->right){
         nodeB->right->father=pivot;
@@ -163,6 +214,9 @@ s_rotateRigth(struct glMap_NODE *pivot){
 A   D     ===>   |B|  E
    / \           / \
   C   E         A   C
+    if(!pivot->right){
+        assert("no right pivot" && 0);
+    }
 */
     struct glMap_NODE *nodeD=pivot->right;
     if(nodeD->left){
@@ -241,68 +295,121 @@ glMap_insertNode(struct glMap_MAP *container, void *toInsert){
     *pivot=anchor;
     (*pivot)->father=pivotFather;
     //balance Upwards
-    struct glMap_NODE *upwardPtr=(*pivot);
-    
-    while(upwardPtr->father){
-        side=s_getSide(upwardPtr);
-        switch(side){
-            case glME_left:{
-                upwardPtr->father->lDepth=1+s_getNodeMaxDepth(upwardPtr);
-                break;
-            }
-            case glME_right:{
-                upwardPtr->father->rDepth=1+s_getNodeMaxDepth(upwardPtr);
-                break;
-            }
-            default:{
-                assert(0);
-            }
-        }
-        if(!upwardPtr->father){
-            break;
-        }
-        int8_t balFac=upwardPtr->rDepth-upwardPtr->lDepth;
-        if((balFac<-1)){
-            if(upwardPtr->left->lDepth>=upwardPtr->left->rDepth){
-                s_rotateLeft(upwardPtr);
-            }else{
-                s_rotateRigth(upwardPtr->left);
-                s_rotateLeft(upwardPtr);
-            }
-        }else if((balFac>1)){
-            if(upwardPtr->right->rDepth>=upwardPtr->right->lDepth){
-                s_rotateRigth(upwardPtr);
-            }else{
-                s_rotateLeft(upwardPtr->right);
-                s_rotateRigth(upwardPtr);
-            }
-        }
-        upwardPtr=upwardPtr->father;
-    }
+    s_balanceFromBottom(*pivot);
     return 0;
 }
 
 //delete
 
+_Bool 
+glMap_deleteNode(struct glMap_MAP *container, void *mem){
+    if(!container | !mem){
+        return 1;
+    }
+    struct glMap_NODE *anchor=(struct glMap_NODE*)((int8_t*)mem-container->startOffset);
+    
+    struct glMap_NODE *pivot=anchor;
+    if(!pivot->right){
+        if(!pivot->left){
+            if(s_getSide(pivot)==glME_left){
+                pivot->father->left=NULL;
+                pivot->father->lDepth=0;
+            }else{
+                pivot->father->right=NULL;
+                pivot->father->rDepth=0;
+            }
+        }else{
+            pivot->father->left=pivot->right;
+            pivot->father->lDepth=1;
+            //it is one level from leafs
+        }
+    }else{
+        pivot=pivot->right;
+        while(pivot->left){
+            pivot=pivot->left;
+            //go to leaf or one level away
+        }
+        if(!pivot->right){
+            if(s_getSide(pivot)==glME_left){
+                pivot->father->left=NULL;
+                pivot->father->lDepth=0;
+            }else{
+                pivot->father->right=NULL;
+                pivot->father->rDepth=0;
+            }
+        }else{
+            pivot->father->left=pivot->right;
+            pivot->father->lDepth=1;
+            //it is one level from leaf
+        }
+        //*pivotFather=;
+        memcpy(pivot, anchor, sizeof(struct glMap_NODE));
+        if(s_getSide(anchor)==glME_left){
+            anchor->father->left=pivot;
+        }else{
+            anchor->father->right=pivot;
+        }
+        if(pivot->left){
+            pivot->left->father=pivot;
+        }
+        if(pivot->right){
+            pivot->right->father=pivot;
+        }
+    }
+    
+    s_balanceFromBottom(pivot);
+    container->size--;
+    return 0;
+}
 
 //get
 
 int64_t 
-glMap_getSize(struct glMap_MAP *map){
-    return map->size;
+glMap_getSize(struct glMap_MAP *container){
+    return container->size;
+}
+
+_Bool 
+glMap_getNode(struct glMap_MAP *container, void *key, void** pointer){
+    if(!container){
+        return 1;
+    }
+    struct glMap_NODE *pivot=container->head.left;
+    enum glMap_enum_side side; 
+    while(pivot){
+        side=container->cmp(s_getKeyFromNode(container, pivot), key);
+        switch(side){
+            case glME_left:{
+                pivot=pivot->left;
+                break;
+            }
+            case glME_right:{
+                pivot=pivot->right;
+                break;
+            }
+            default:{
+                if(pointer){
+                    *pointer=s_getStartFromNode(container, pivot);
+                }
+                return 0;
+            }
+        }
+        
+    }
+    return 1;
 }
 
 //iterate
 
 void
-glMap_createIter(struct glMap_MAP *map, struct glMap_ITER *iter){
+glMap_createIter(struct glMap_MAP *container, struct glMap_ITER *iter){
     iter->autoRef=iter;
-    iter->map=map;
-    if(map->size==0){
-        iter->actualNode=&(map->head);
+    iter->map=container;
+    if(container->size==0){
+        iter->actualNode=&(container->head);
         return;
     }
-    iter->actualNode=map->head.left;
+    iter->actualNode=container->head.left;
     while(iter->actualNode->left){
         iter->actualNode=iter->actualNode->left;
     }
@@ -310,7 +417,7 @@ glMap_createIter(struct glMap_MAP *map, struct glMap_ITER *iter){
 }
 
 _Bool 
-glMap_iterNextVal(struct glMap_ITER iterCpy, void **pointer){
+glMap_iterNextNode(struct glMap_ITER iterCpy, void **pointer){
     struct glMap_ITER *iter=iterCpy.autoRef;
     if(!iter->actualNode->father){
         *pointer=NULL;

@@ -39,14 +39,19 @@ _Bool glMap_createMap(struct glMap_MAP **container, ptrdiff_t offset, ptrdiff_t 
 _Bool glMap_insertNode(struct glMap_MAP *container, void *toInsert);
 
 //delete
+
+_Bool glMap_deleteNode(struct glMap_MAP *container, void *mem);
+
 //get
 
 int64_t glMap_getSize(struct glMap_MAP *map);
+
+_Bool glMap_getNode(struct glMap_MAP *container, void *key, void** pointer);
 
 //iterate
 
 void glMap_createIter(struct glMap_MAP *map, struct glMap_ITER *iter);
 
-_Bool glMap_iterNextVal(struct glMap_ITER iter, void **pointer);
+_Bool glMap_iterNextNode(struct glMap_ITER iter, void **pointer);
 
 #endif /*__GUM__GL__AVL__MAP__*/

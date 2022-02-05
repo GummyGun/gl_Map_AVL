@@ -3,21 +3,43 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 struct testStruct{
     int64_t key;
     glMap_Anchor anchor;
 };
 
-_Bool 
-createNode(struct testStruct **test, int64_t key){
-    *test=(struct testStruct*)malloc(sizeof(struct testStruct));
-    (*test)->key=key;
+_Bool
+deleteNode(glMap_Map map, int64_t key){
+    struct testStruct *holder;
+    if(glMap_getNode(map, &key, (void**)&holder)){
+        return 1;
+    }
+    glMap_deleteNode(map, (void*)holder);
+    free(holder);
     return 0;
 }
 
+_Bool
+getNode(glMap_Map map, int64_t key){
+    if(glMap_getNode(map, &key, NULL)){
+        return 1;
+    }
+    return 0;
+}
+
+_Bool 
+insertNode(glMap_Map map, int64_t key){
+    struct testStruct *test=(struct testStruct*)malloc(sizeof(struct testStruct));
+    test->key=key;
+    if(!glMap_insertNode(map, test)){
+        return 0;
+    }
+    free(test);
+    return 1;
+}
+
 int8_t 
-cmp(void *arg0,void *arg1){
+int64_tCmpFunc(void *arg0,void *arg1){
     int64_t *numArg0=(int64_t*)arg0;
     int64_t *numArg1=(int64_t*)arg1;
     if(*numArg0>*numArg1){
@@ -28,46 +50,59 @@ cmp(void *arg0,void *arg1){
     return 0;
 }
 
+
+
 int
 main(){
     glMap_Map map=NULL;
-    glMap_createMap(&map, offsetof(struct testStruct, anchor), offsetof(struct testStruct, key), cmp);
-    
-    struct testStruct *pointer=NULL;
-    
+    glMap_createMap(&map, offsetof(struct testStruct, anchor), offsetof(struct testStruct, key), int64_tCmpFunc);
     
     int64_t size=0;
-    for(int32_t iter=0; iter<60; iter++){
-        createNode(&pointer, rand()%10);
-        //createNode(&pointer, iter);
-        
-        if(!glMap_insertNode(map, pointer)){
+    //int64_t insert;
+    for(int64_t iter=0; iter<31; iter++){
+        //insert=rand()%20;
+        if(!insertNode(map, iter)){
             size++;
+            //printf("%ld se metio %ld\n", size, iter);
         }else{
-            free(pointer);
+            //printf("----- no se metio %ld\n", insert);
         }
     }
+    
+    /*
     printf("size: %ld\n", size);
-    printf("size in map: %ld\n", glMap_getSize(map));
-    /*
-    */
-    
-    
-    /*
     createNode(&pointer);
     if(glMap_insertNode(map, pointer)){
         printf("eroror\n");
     }
     */
-    //test_rotateR(map);
     
+    if(!getNode(map, 4)){
+        //printf("si esta\n");
+    }else{
+        //printf("no esta\n");
+    }
+    
+    
+    for(int64_t iter=0; iter<22; iter++){
+        /*
+        printf("-=-=-=-=-=-=-=-\n");
+        printf("%ld\n", glMap_getSize(map));
+        */
+        deleteNode(map, iter);
+        /*
+        printf("%ld\n", glMap_getSize(map));
+        printf("-=-=-=-=-=-=-=-\n");
+        */
+    }
     //test_print(map);
     
     glMap_Iter iter;
     glMap_createIter(map, &iter);
     struct testStruct *holder=NULL;
-    while(!glMap_iterNextVal(iter, (void**)&holder)){
-        printf("%ld\n", holder->key);
+    while(!glMap_iterNextNode(iter, (void**)&holder)){
+        //printf("%ld\n", holder->key);
     }
+    free(map);
     return 1;
 }
